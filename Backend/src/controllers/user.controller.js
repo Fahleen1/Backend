@@ -1,5 +1,6 @@
 import { checkUserExistance, getUserById } from '../services/user.service.js';
 import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadFile } from '../utils/cloudinary.js';
 
@@ -51,4 +52,9 @@ export const registerUser = asyncHandler(async (req, res) => {
   if (!createdUser) {
     throw new ApiError(500, 'Error creating user');
   }
+
+  //Return response
+  return res
+    .status(200)
+    .json(new ApiResponse(200, createdUser, 'User created successfully'));
 });
