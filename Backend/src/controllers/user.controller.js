@@ -100,6 +100,8 @@ export const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'User not found');
   }
 
+  //console.log('User during login:', user);
+
   //Check password
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) {
@@ -146,7 +148,7 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .clearCookie('accessToken', accessToken, options)
-    .clearCookie('refreshToken', refreshToken, options)
+    .clearCookie('accessToken', options)
+    .clearCookie('refreshToken', options)
     .json(new ApiResponse(200, {}, 'User logged Out successfully'));
 });
