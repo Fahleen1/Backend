@@ -1,4 +1,9 @@
-import { registerUser } from '../controllers/user.controller.js';
+import {
+  loginUser,
+  logoutUser,
+  registerUser,
+} from '../controllers/user.controller.js';
+import { verifyJWT } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/multer.middleware.js';
 import { Router } from 'express';
 
@@ -10,5 +15,8 @@ userRouter.route('/register').post(
   ]),
   registerUser,
 );
+userRouter.route('/login').post(loginUser);
 
+//secured routes
+userRouter.route('/logout').post(verifyJWT, logoutUser);
 export { userRouter };

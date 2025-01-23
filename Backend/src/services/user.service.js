@@ -1,11 +1,11 @@
 import { User } from '../models/user.model.js';
 
 export const checkUserExistance = async (username, email) => {
-  const user = User.findOne({ $or: [{ username }, { email }] });
+  const user = await User.findOne({ $or: [{ username }, { email }] });
   return user;
 };
 
-export const registerUser = async (
+export const createUser = async (
   username,
   email,
   fullname,
@@ -26,5 +26,15 @@ export const registerUser = async (
 };
 
 export const getUserById = async (id) => {
-  const user = await User.findById(id).select('-password - refreshToken');
+  const user = await User.findById(id).select('-password -refreshToken');
+  return user;
+};
+
+export const userUpdate = async (id) => {
+  const user = await User.findByIdAndUpdate(
+    id,
+    { $set: { refreshToken: undefined } },
+    { new: true },
+  );
+  return user;
 };
