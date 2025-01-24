@@ -38,3 +38,16 @@ export const userUpdate = async (id) => {
   );
   return user;
 };
+
+export const updateUserAvatar = async (id, avatar) => {
+  const user = await User.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    { new: true },
+  ).select('-password');
+  return user;
+};
