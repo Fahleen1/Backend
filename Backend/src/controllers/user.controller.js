@@ -1,4 +1,5 @@
 import { upload } from '../middleware/multer.middleware.js';
+import { User } from '../models/user.model.js';
 import {
   checkUserExistance,
   getUserById,
@@ -9,6 +10,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadFile } from '../utils/cloudinary.js';
+import mongoose from 'mongoose';
 
 export const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -231,4 +233,125 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
   }
 
   await updateUserAvatar(req.user._id, avatar.url);
+});
+
+export const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  if (!username.trim()) throw new ApiError(401, 'User not found');
+
+  //Aggregation pipeline
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username,
+      },
+    },
+    {
+      $lookup: {
+        from: 'subscriptions',
+        localField: '_id',
+        foreignField: 'channel',
+        as: 'subscribers', // we are finding subscribers for particular channel
+      },
+    },
+    {
+      $lookup: {
+        from: 'subscription',
+        localField: '_id',
+        foreignField: 'subscriber',
+        as: 'subscribedTo', //finding whom I subscribed
+      },
+    },
+    //adding fields plus calculating count
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: '$subscribers',
+        },
+        channelSubscribedToCount: {
+          $size: '$subscribedTo',
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, '$subscribers.subscriber'] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullname: 1, //flag set to 1
+        username: 1,
+        avatar: 1,
+        coverImage: 1,
+        subscribersCount: 1,
+        channelSubscribedToCount: 1,
+        isSubscribed: 1,
+        email: 1,
+      },
+    },
+  ]);
+
+  console.log(channel);
+  if (!channel?.length) throw new ApiError(404, 'channel not exist');
+  return res
+    .status(200)
+    .json(new ApiResponse(200, channel[0], 'User channel fetched successfuly'));
+});
+
+export const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: mongoose.Types.ObjectId(req.user?._id),
+      },
+    },
+    {
+      $lookup: {
+        from: 'videos',
+        localField: 'watchHistory',
+        foreignField: '_id',
+        as: 'watchHistory',
+        //(sub pipeline) nested pipeline now we're inside videos and performing lookup there
+        pipeline: [
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'owner', //getting owner info
+              foreignField: '_id',
+              as: 'owner',
+              pipeline: [
+                {
+                  $project: {
+                    fullname: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: '$owner',
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0].watchHistory,
+        'Watch History fetched successfully',
+      ),
+    );
 });

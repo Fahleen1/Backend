@@ -28,18 +28,4 @@ export const uploadFile = async (localFilePath) => {
     console.log('error uploading file');
     return null;
   }
-  // console.error('Cloudinary upload error:', error);
-  // if (response) {
-  //   // Delete the local file if upload is successful
-  //   if (fs.existsSync(localFilePath)) {
-  //     fs.unlink(localFilePath, (unlinkError) => {
-  //       if (unlinkError) {
-  //         console.error(
-  //           'Failed to delete temporary file:',
-  //           unlinkError.message,
-  //         );
-  //       }
-  //     });
-  //   }
-  // }
 };
